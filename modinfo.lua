@@ -1,26 +1,24 @@
-name = 'Inspect Craft Finder'
-author = 'Sinny Deas'
-version = '1.7'
-description = 'Description \n'
-  .. '- Show possible crafting recipes, in the crafting menu, when inspecting something.\n'
-  .. '- Item can be on the ground or in the inventory.\n\n'
-  .. 'Keyboard/Mouse and Gamepad \n'
-  .. '- Both supported.\n\n'
-  .. 'v1.7 \n'
+local function T(en, zh, zht) return ChooseTranslationTable({ en, zh = zh, zht = zht or zh }) end
 
-forumthread = ''
+name = T('Inspect Craft Finder', '检查材料查找制作配方')
+author = T('Sinny Deas, liolok', 'Sinny Deas、李皓奇')
+version = '2025.04.06'
+description = T(
+  [[
+- Show possible crafting recipes, in the crafting menu, when inspecting something.
+- Item can be on the ground or in the inventory.
+- Both Keyboard/Mouse and Gamepad and supported.
+Last updated at:
+]],
+  [[
+- 检查物品时弹出制作菜单并显示所有以它为材料的制作配方
+- 物品可以在地上或者格子里
+- 支持键鼠以及手柄
+最后更新于：
+]]
+) .. version
 api_version = 10
-
 dst_compatible = true
-dont_starve_compatible = false
-reign_of_giants_compatible = false
-hamlet_compatible = false
-forge_compatible = false
-
 client_only_mod = true
-all_clients_require_mod = false
-
-server_filter_tags = { 'Inspect', 'Finder', 'Inspect Craft Finder', 'InspectCraftFinder' }
-
 icon_atlas = 'icon.xml'
 icon = 'icon.tex'
