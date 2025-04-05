@@ -1,6 +1,4 @@
 local recipes = {}
-local PlayerHUD
-local loaded = false
 
 local function ForceFilterEverything(widget)
   if widget.current_filter_name == 'EVERYTHING' then return end
@@ -68,10 +66,12 @@ AddComponentPostInit('playercontroller', function(self)
     return OldRemoteUseItemFromInvTile(self, buffaction, item)
   end
 
-  local OldDoAction = self.DoAction
-  self.DoAction = function(self, buffaction, ...)
-    local prefab = buffaction and buffaction.target and buffaction.target.prefab
-    if buffaction.action == GLOBAL.ACTIONS.LOOKAT then CraftFinder(prefab) end
-    return OldDoAction(self, buffaction, ...)
+  if GetModConfigData('enable_inspect_on_ground') then
+    local OldDoAction = self.DoAction
+    self.DoAction = function(self, buffaction, ...)
+      local prefab = buffaction and buffaction.target and buffaction.target.prefab
+      if buffaction.action == GLOBAL.ACTIONS.LOOKAT then CraftFinder(prefab) end
+      return OldDoAction(self, buffaction, ...)
+    end
   end
 end)
