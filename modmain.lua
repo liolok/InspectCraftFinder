@@ -1,114 +1,77 @@
--- GLOBAL.CHEATS_ENABLED = true
--- GLOBAL.require( 'debugkeys' )
-
-local Image = GLOBAL.require('widgets/image')
-
 local recipes = {}
 local PlayerHUD
 local loaded = false
 
-local function ForceFilterEverything(craftWidget)
-  if craftWidget.current_filter_name == 'EVERYTHING' then return end
+local function ForceFilterEverything(widget)
+  if widget.current_filter_name == 'EVERYTHING' then return end
 
-  if craftWidget.current_filter_name ~= nil and craftWidget.filter_buttons[craftWidget.current_filter_name] ~= nil then
-    craftWidget.filter_buttons[craftWidget.current_filter_name].button:Unselect()
+  if widget.current_filter_name and widget.filter_buttons[widget.current_filter_name] then
+    widget.filter_buttons[widget.current_filter_name].button:Unselect()
   end
-  craftWidget.filter_buttons['EVERYTHING'].button:Select()
+  widget.filter_buttons['EVERYTHING'].button:Select()
 
-  craftWidget.current_filter_name = 'EVERYTHING'
+  widget.current_filter_name = 'EVERYTHING'
 end
 
 local function CraftFinder(prefab)
-  if not prefab or not PlayerHUD then return end
+  if not prefab then return end
+  local HUD = GLOBAL.ThePlayer and GLOBAL.ThePlayer.HUD -- screens/playerhud
+  local hud = HUD and HUD.controls and HUD.controls.craftingmenu -- widgets/redux/craftingmenu_hud
+  local widget = hud and hud.craftingmenu -- widgets/redux/craftingmenu_widget
+  if not widget then return end
 
-  local craftHUD = PlayerHUD.controls.craftingmenu
-  local f_recipes = {}
+  local recipes_data = {}
   for _, recipe in ipairs(recipes[prefab] or {}) do
-    local data = craftHUD.valid_recipes[recipe]
-    table.insert(f_recipes, data)
+    local data = hud.valid_recipes[recipe]
+    table.insert(recipes_data, data)
   end
+  if #recipes_data == 0 then return end -- no possible recipes found, nothing to do.
 
-  -- print(GLOBAL.GetInventoryItemAtlas(prefab..".tex"))
-  -- if test then
-  --     test:SetTexture(GLOBAL.GetInventoryItemAtlas(prefab..".tex"), prefab..".tex")
-  -- else
-  --     test = PlayerHUD.controls.topleft_root:AddChild(Image(GLOBAL.GetInventoryItemAtlas(prefab..".tex"), prefab..".tex"))
-  --     test:ScaleToSize(32,32)
-  --     test:SetPosition(16, -16)
-  -- end
-
-  local craftWidget = craftHUD.craftingmenu
-  if #f_recipes > 0 then
-    PlayerHUD:OpenCrafting()
-    craftWidget.search_box.textbox:SetString(prefab)
-    ForceFilterEverything(craftWidget)
-    craftWidget.no_recipes_msg:Hide()
-    craftWidget.recipe_grid:ResetScroll()
-    craftWidget.recipe_grid:SetItemsData(f_recipes)
-    craftWidget.recipe_grid.dirty = false
-    craftWidget.details_root:PopulateRecipeDetailPanel()
-  end
+  HUD:OpenCrafting()
+  ForceFilterEverything(widget)
+  widget.search_box.textbox:SetString(prefab)
+  widget.no_recipes_msg:Hide()
+  widget.recipe_grid:ResetScroll()
+  widget.recipe_grid:SetItemsData(recipes_data)
+  widget.recipe_grid.dirty = false
+  widget.details_root:PopulateRecipeDetailPanel()
 end
 
-AddPlayerPostInit(function(pj)
+AddPlayerPostInit(function()
   recipes = {}
-  for Rname, Rvalue in pairs(GLOBAL.AllRecipes) do
-    for _, ing in ipairs(Rvalue.ingredients) do
-      local prefab = ing.type -- prefab of ingredient
+  for recipe_name, recipe in pairs(GLOBAL.AllRecipes) do
+    for _, ingredient in ipairs(recipe.ingredients) do
+      local prefab = ingredient.type -- prefab of ingredient
       if not recipes[prefab] then recipes[prefab] = {} end
-      table.insert(recipes[prefab], Rname)
+      table.insert(recipes[prefab], recipe_name)
     end
   end
 end)
 
-AddComponentPostInit('playercontroller', function(playercontroller)
-  PlayerHUD = GLOBAL.ThePlayer.HUD
-
-  if GLOBAL.TheNet:GetIsServer() then return end
-
-  local old_RemoteInspectItemFromInvTile = playercontroller.RemoteInspectItemFromInvTile
-  function playercontroller:RemoteInspectItemFromInvTile(item)
-    CraftFinder(item.prefab)
-    old_RemoteInspectItemFromInvTile(self, item)
+AddComponentPostInit('playercontroller', function(self)
+  local OldRemoteInspectItemFromInvTile = self.RemoteInspectItemFromInvTile
+  self.RemoteInspectItemFromInvTile = function(self, item)
+    CraftFinder(item and item.prefab)
+    return OldRemoteInspectItemFromInvTile(self, item)
   end
 
-  local old_RemoteInspectButton = playercontroller.RemoteInspectButton
-  function playercontroller:RemoteInspectButton(action)
-    CraftFinder(action.target.prefab)
-    old_RemoteInspectButton(self, action)
+  local OldRemoteInspectButton = self.RemoteInspectButton
+  self.RemoteInspectButton = function(self, action)
+    CraftFinder(action and action.target and action.target.prefab)
+    return OldRemoteInspectButton(self, action)
   end
 
-  local old_RemoteUseItemFromInvTile = playercontroller.RemoteUseItemFromInvTile
-  function playercontroller:RemoteUseItemFromInvTile(buffaction, item)
-    if buffaction.action == GLOBAL.ACTIONS.LOOKAT then CraftFinder(item.prefab) end
-    old_RemoteUseItemFromInvTile(self, buffaction, item)
+  local OldRemoteUseItemFromInvTile = self.RemoteUseItemFromInvTile
+  self.RemoteUseItemFromInvTile = function(self, buffaction, item)
+    local prefab = item and item.prefab
+    if buffaction.action == GLOBAL.ACTIONS.LOOKAT then CraftFinder(prefab) end
+    return OldRemoteUseItemFromInvTile(self, buffaction, item)
   end
 
-  local old_DoAction = playercontroller.DoAction
-  function playercontroller:DoAction(buffaction, spellbook)
-    if buffaction and buffaction.target and buffaction.action == GLOBAL.ACTIONS.LOOKAT then
-      CraftFinder(buffaction.target.prefab)
-    end
-    old_DoAction(self, buffaction, spellbook)
-  end
-end)
-
-AddClassPostConstruct('screens/playerhud', function(playerhud)
-  PlayerHUD = playerhud
-
-  if GLOBAL.TheNet:GetIsClient() or loaded then return end
-  loaded = true
-
-  local old_LOOKAT = GLOBAL.ACTIONS.LOOKAT.fn
-  GLOBAL.ACTIONS.LOOKAT.fn = function(act)
-    if act.target and act.target.prefab then
-      CraftFinder(act.target.prefab)
-      return old_LOOKAT(act)
-    end
-    if act.invobject and act.invobject.prefab then
-      CraftFinder(act.invobject.prefab)
-      return old_LOOKAT(act)
-    end
-    return old_LOOKAT(act)
+  local OldDoAction = self.DoAction
+  self.DoAction = function(self, buffaction, ...)
+    local prefab = buffaction and buffaction.target and buffaction.target.prefab
+    if buffaction.action == GLOBAL.ACTIONS.LOOKAT then CraftFinder(prefab) end
+    return OldDoAction(self, buffaction, ...)
   end
 end)
