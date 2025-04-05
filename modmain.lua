@@ -4,16 +4,8 @@
 local Image = GLOBAL.require('widgets/image')
 
 local recipes = {}
-local actionstrs = { CARTOGRAPHY = true, ORPHANAGE = true, SOCKET = true }
 local PlayerHUD
 local loaded = false
-
-local function isValidRecipe(pj, recipeV)
-  if recipeV.hint_msg then return false end
-  if recipeV.builder_tag and not pj:HasTag(recipeV.builder_tag) then return false end
-  if recipeV.actionstr and not actionstrs[recipeV.actionstr] then return false end
-  return true
-end
 
 local function ForceFilterEverything(craftWidget)
   if craftWidget.current_filter_name == 'EVERYTHING' then return end
@@ -31,10 +23,9 @@ local function CraftFinder(prefab)
 
   local craftHUD = PlayerHUD.controls.craftingmenu
   local f_recipes = {}
-  if recipes[prefab] then
-    for _, recipe in ipairs(recipes[prefab]) do
-      table.insert(f_recipes, craftHUD.valid_recipes[recipe])
-    end
+  for _, recipe in ipairs(recipes[prefab] or {}) do
+    local data = craftHUD.valid_recipes[recipe]
+    table.insert(f_recipes, data)
   end
 
   -- print(GLOBAL.GetInventoryItemAtlas(prefab..".tex"))
@@ -63,10 +54,9 @@ AddPlayerPostInit(function(pj)
   recipes = {}
   for Rname, Rvalue in pairs(GLOBAL.AllRecipes) do
     for _, ing in ipairs(Rvalue.ingredients) do
-      if isValidRecipe(pj, Rvalue) then
-        if not recipes[ing.type] then recipes[ing.type] = {} end
-        table.insert(recipes[ing.type], Rname)
-      end
+      local prefab = ing.type -- prefab of ingredient
+      if not recipes[prefab] then recipes[prefab] = {} end
+      table.insert(recipes[prefab], Rname)
     end
   end
 end)
