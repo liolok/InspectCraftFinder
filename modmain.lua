@@ -1,4 +1,5 @@
 local recipes = {}
+local AUTO_OPEN_CRAFT_MENU = GetModConfigData('auto_open_craft_menu')
 
 local function ForceFilterEverything(widget)
   if widget.current_filter_name == 'EVERYTHING' then return end
@@ -25,7 +26,7 @@ local function CraftFinder(prefab)
   end
   if #recipes_data == 0 then return end -- no possible recipes found, nothing to do.
 
-  HUD:OpenCrafting()
+  if AUTO_OPEN_CRAFT_MENU then HUD:OpenCrafting() end
   ForceFilterEverything(widget)
   widget.search_box.textbox:SetString(prefab)
   widget.no_recipes_msg:Hide()

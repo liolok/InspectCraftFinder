@@ -24,6 +24,16 @@ icon_atlas = 'icon.xml'
 icon = 'icon.tex'
 configuration_options = {
   {
+    name = 'auto_open_craft_menu',
+    label = T('Auto Open Craft Menu', '自动打开制作菜单'),
+    hover = T('Or else open it manually and then inspect item.', '否则手动打开再检查物品'),
+    options = {
+      { data = true, description = T('Enabled', '启用') },
+      { data = false, description = T('Disabled', '禁用') },
+    },
+    default = true,
+  },
+  {
     name = 'enable_inspect_on_ground',
     label = T('Items on the Ground', '地面物品'),
     hover = T('Show recipes when inspecting items on the ground.', '检查地面物品时展示配方'),
