@@ -2,21 +2,20 @@ local function T(en, zh, zht) return ChooseTranslationTable({ en, zh = zh, zht =
 
 name = T('Inspect Craft Finder', '检查材料展示制作配方')
 author = T('Sinny Deas, liolok', 'Sinny Deas、李皓奇')
-version = '2025.04.06'
+local date = '2025-04-06'
+version = date .. '' -- for revision in same day
 description = T(
   [[
 - Show possible crafting recipes, in the crafting menu, when inspecting something.
 - Item can be on the ground or in the inventory.
 - Both Keyboard/Mouse and Gamepad and supported.
-Last updated at:
 ]],
   [[
-- 检查物品时弹出制作菜单并展示所有以它为材料的制作配方
+- 检查物品时弹出制作目录并展示所有以它为材料的制作配方
 - 物品可以在地上或者格子里
 - 支持键鼠以及手柄
-最后更新于：
 ]]
-) .. version
+) .. '󰀰 ' .. date -- Florid Postern（绚丽之门）
 api_version = 10
 dst_compatible = true
 client_only_mod = true
@@ -25,7 +24,7 @@ icon = 'icon.tex'
 configuration_options = {
   {
     name = 'auto_open_craft_menu',
-    label = T('Auto Open Craft Menu', '自动打开制作菜单'),
+    label = T('Auto Open Craft Menu', '自动打开制作目录'),
     options = {
       { data = true, description = T('Enabled', '启用') },
       { data = false, description = T('Disabled', '禁用') },
