@@ -17,21 +17,34 @@ local function CraftFinder(prefab)
   local HUD = GLOBAL.ThePlayer and GLOBAL.ThePlayer.HUD -- screens/playerhud
   local hud = HUD and HUD.controls and HUD.controls.craftingmenu -- widgets/redux/craftingmenu_hud
   local widget = hud and hud.craftingmenu -- widgets/redux/craftingmenu_widget
-  if not widget then return end
+  local valid_recipes = hud and hud.valid_recipes
+  if not (HUD and valid_recipes and widget) then return end
 
-  local recipes_data = {}
+  local recipes_can_build = {} -- sort recipes that we can build before all other recipes
+  local recipes_others = {}
   for _, recipe in ipairs(recipes[prefab] or {}) do
-    local data = hud.valid_recipes[recipe]
-    table.insert(recipes_data, data)
+    local data = valid_recipes[recipe]
+    if data and data.meta and data.meta.can_build then
+      table.insert(recipes_can_build, data)
+    else
+      table.insert(recipes_others, data)
+    end
   end
-  if #recipes_data == 0 then return end -- no possible recipes found, nothing to do.
+  local filtered_recipes = {}
+  for _, data in ipairs(recipes_can_build) do
+    table.insert(filtered_recipes, data)
+  end
+  for _, data in ipairs(recipes_others) do
+    table.insert(filtered_recipes, data)
+  end
+  if #filtered_recipes == 0 then return end -- no possible recipes found, nothing to do.
 
   if AUTO_OPEN_CRAFT_MENU then HUD:OpenCrafting() end
   ForceFilterEverything(widget)
   widget.search_box.textbox:SetString(prefab)
   widget.no_recipes_msg:Hide()
   widget.recipe_grid:ResetScroll()
-  widget.recipe_grid:SetItemsData(recipes_data)
+  widget.recipe_grid:SetItemsData(filtered_recipes)
   widget.recipe_grid.dirty = false
   widget.details_root:PopulateRecipeDetailPanel()
 end
@@ -49,19 +62,19 @@ end)
 
 AddComponentPostInit('playercontroller', function(self)
   local OldRemoteInspectItemFromInvTile = self.RemoteInspectItemFromInvTile
-  self.RemoteInspectItemFromInvTile = function(self, item)
+  function self:RemoteInspectItemFromInvTile(item)
     CraftFinder(item and item.prefab)
     return OldRemoteInspectItemFromInvTile(self, item)
   end
 
   local OldRemoteInspectButton = self.RemoteInspectButton
-  self.RemoteInspectButton = function(self, action)
+  function self:RemoteInspectButton(action)
     CraftFinder(action and action.target and action.target.prefab)
     return OldRemoteInspectButton(self, action)
   end
 
   local OldRemoteUseItemFromInvTile = self.RemoteUseItemFromInvTile
-  self.RemoteUseItemFromInvTile = function(self, buffaction, item)
+  function self:RemoteUseItemFromInvTile(buffaction, item)
     local prefab = item and item.prefab
     if buffaction.action == GLOBAL.ACTIONS.LOOKAT then CraftFinder(prefab) end
     return OldRemoteUseItemFromInvTile(self, buffaction, item)
@@ -69,7 +82,7 @@ AddComponentPostInit('playercontroller', function(self)
 
   if GetModConfigData('enable_inspect_on_ground') then
     local OldDoAction = self.DoAction
-    self.DoAction = function(self, buffaction, ...)
+    function self:DoAction(buffaction, ...)
       local prefab = buffaction and buffaction.target and buffaction.target.prefab
       if buffaction.action == GLOBAL.ACTIONS.LOOKAT then CraftFinder(prefab) end
       return OldDoAction(self, buffaction, ...)
