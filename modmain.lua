@@ -89,3 +89,9 @@ AddComponentPostInit('playercontroller', function(self)
     end
   end
 end)
+
+if GetModConfigData('prevent_tech_tree_refresh') then
+  AddClassPostConstruct('widgets/redux/craftingmenu_widget', function(self)
+    function self:Refresh() return self:UpdateFilterButtons() end -- no more messing up current page! except update the crafting station button on the left side of search box
+  end)
+end

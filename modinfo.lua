@@ -41,4 +41,17 @@ configuration_options = {
     },
     default = true,
   },
+  {
+    name = 'prevent_tech_tree_refresh',
+    label = T('Prevent Refresh Craft Menu', '阻止刷新制作目录'),
+    hover = T(
+      'When you approach a prototyper or crafting station, prevent it from messing up the current page.',
+      '当你路过一个原型机或制作站，阻止它乱动当前页面。'
+    ),
+    options = {
+      { data = true, description = T('Enabled', '启用') },
+      { data = false, description = T('Disabled', '禁用') },
+    },
+    default = false,
+  },
 }
