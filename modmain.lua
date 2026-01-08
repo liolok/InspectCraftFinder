@@ -36,6 +36,7 @@ local function CraftFinder(prefab)
   if not prefab then return end
   local HUD = GLOBAL.ThePlayer and GLOBAL.ThePlayer.HUD -- screens/playerhud
   local hud = HUD and HUD.controls and HUD.controls.craftingmenu -- widgets/redux/craftingmenu_hud
+  if hud then hud:RebuildRecipes() end
   local widget = hud and hud.craftingmenu -- widgets/redux/craftingmenu_widget
   local valid_recipes = hud and hud.valid_recipes
   if not (HUD and valid_recipes and widget) then return end
