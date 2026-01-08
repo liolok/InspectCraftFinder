@@ -1,4 +1,5 @@
 local recipes = {}
+local override_filter = false
 local AUTO_OPEN_CRAFT_MENU = GetModConfigData('auto_open_craft_menu')
 
 local function ForceFilterEverything(widget)
@@ -55,6 +56,7 @@ local function CraftFinder(prefab)
   widget.recipe_grid:SetItemsData(filtered_recipes)
   widget.recipe_grid.dirty = false
   widget.details_root:PopulateRecipeDetailPanel()
+  override_filter = true
 end
 
 AddPlayerPostInit(function()
@@ -100,10 +102,21 @@ end)
 
 if GetModConfigData('prevent_tech_tree_refresh') then -- no more messing up current page!
   AddClassPostConstruct('widgets/redux/craftingmenu_widget', function(self)
-    function self:Refresh()
-      self:UpdateFilterButtons() -- e.g. the crafting station button on the left side of search box
-      self.recipe_grid:RefreshView() -- update the recipe state visual hint, e.g. the lightbulb or lock icon
-      self.details_root:Refresh() -- update the detail below
+    local OldRefresh = self.Refresh
+    function self:Refresh(...)
+      if override_filter then
+        self:UpdateFilterButtons() -- e.g. the crafting station button on the left side of search box
+        self.recipe_grid:RefreshView() -- update the recipe state visual hint, e.g. the lightbulb or lock icon
+        self.details_root:Refresh() -- update the detail below
+      else
+        return OldRefresh(self, ...)
+      end
+    end
+
+    local OldSelectFilter = self.SelectFilter
+    function self:SelectFilter(...)
+      override_filter = false
+      return OldSelectFilter(self, ...)
     end
   end)
 end
