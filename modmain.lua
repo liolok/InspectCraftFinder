@@ -1,6 +1,8 @@
 local recipes = {}
 local override_filter = false
 local AUTO_OPEN_CRAFT_MENU = GetModConfigData('auto_open_craft_menu')
+local lang = GLOBAL.LOC.GetLocaleCode()
+local MOD_NAME = (lang == 'zh' or lang == 'zht') and '检查材料展示制作配方' or 'Inspect Craft Finder'
 
 local function ForceFilterEverything(widget)
   if widget.current_filter_name == 'EVERYTHING' then return end
@@ -51,7 +53,7 @@ local function CraftFinder(prefab)
 
   if AUTO_OPEN_CRAFT_MENU then HUD:OpenCrafting() end
   ForceFilterEverything(widget)
-  widget.search_box.textbox:SetString(prefab)
+  widget.search_box.textbox.prompt:SetString(MOD_NAME)
   widget.no_recipes_msg:Hide()
   widget.recipe_grid:ResetScroll()
   widget.recipe_grid:SetItemsData(filtered_recipes)
