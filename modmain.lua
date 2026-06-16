@@ -1,74 +1,19 @@
-local recipes = {}
-local override_filter = false
-local AUTO_OPEN_CRAFT_MENU = GetModConfigData('auto_open_craft_menu')
-local lang = GLOBAL.LOC.GetLocaleCode()
-local MOD_NAME = (lang == 'zh' or lang == 'zht') and '检查材料展示制作配方' or 'Inspect Craft Finder'
+local G = GLOBAL
 
-local function ForceFilterEverything(widget)
-  if widget.current_filter_name == 'EVERYTHING' then return end
+modimport('languages/en') -- load translation strings with English fallback
+local lang = 'languages/' .. G.LOC.GetLocaleCode()
+if G.kleifileexists(MODROOT .. lang .. '.lua') then modimport(lang) end
 
-  if widget.current_filter_name and widget.filter_buttons[widget.current_filter_name] then
-    widget.filter_buttons[widget.current_filter_name].button:Unselect()
-  end
-  widget.filter_buttons['EVERYTHING'].button:Select()
-
-  widget.current_filter_name = 'EVERYTHING'
-end
-
-local function GetRecipeState(meta_data)
-  if meta_data then
-    local build_state = meta_data.build_state
-    if meta_data.can_build then
-      if build_state == 'prototype' then return 3 end
-      if build_state == 'buffered' then return 2 end
-      return 1
-    else
-      if build_state == 'prototype' then return 0.9 end
-      if build_state == 'no_ingredients' then return 0.8 end
-      return 0
-    end
-  else
-    return -1
-  end
-end
-
-local function CompareRecipe(data_a, data_b) return GetRecipeState(data_a.meta) > GetRecipeState(data_b.meta) end
-
-local function CraftFinder(prefab)
-  if not prefab then return end
-  local HUD = GLOBAL.ThePlayer and GLOBAL.ThePlayer.HUD -- screens/playerhud
-  local hud = HUD and HUD.controls and HUD.controls.craftingmenu -- widgets/redux/craftingmenu_hud
-  if hud then hud:RebuildRecipes() end
-  local widget = hud and hud.craftingmenu -- widgets/redux/craftingmenu_widget
-  local valid_recipes = hud and hud.valid_recipes
-  if not (HUD and valid_recipes and widget) then return end
-
-  local filtered_recipes = {}
-  for _, recipe in ipairs(recipes[prefab] or {}) do
-    table.insert(filtered_recipes, valid_recipes[recipe])
-  end
-  if #filtered_recipes == 0 then return end -- no possible recipes found, nothing to do.
-
-  table.sort(filtered_recipes, CompareRecipe)
-
-  if AUTO_OPEN_CRAFT_MENU then HUD:OpenCrafting() end
-  ForceFilterEverything(widget)
-  widget.search_box.textbox.prompt:SetString(MOD_NAME)
-  widget.no_recipes_msg:Hide()
-  widget.recipe_grid:ResetScroll()
-  widget.recipe_grid:SetItemsData(filtered_recipes)
-  widget.recipe_grid.dirty = false
-  widget.details_root:PopulateRecipeDetailPanel()
-  override_filter = true
-end
+TUNING.WtCwT = { override_filter = false, recipes = {}, key_handler = nil }
+local ShowRecipesByIngredient = require('show_recipes_by_ingredient')
 
 AddPlayerPostInit(function()
-  recipes = {}
-  for recipe_name, recipe in pairs(GLOBAL.AllRecipes) do
+  TUNING.WtCwT.recipes = {} -- ingredient as key, recipes table as value
+  for recipe_name, recipe in pairs(G.AllRecipes) do
     for _, ingredient in ipairs(recipe.ingredients) do
       local prefab = ingredient.type -- prefab of ingredient
-      if not recipes[prefab] then recipes[prefab] = {} end
-      table.insert(recipes[prefab], recipe_name)
+      if not TUNING.WtCwT.recipes[prefab] then TUNING.WtCwT.recipes[prefab] = {} end
+      table.insert(TUNING.WtCwT.recipes[prefab], recipe_name)
     end
   end
 end)
@@ -76,50 +21,57 @@ end)
 AddComponentPostInit('playercontroller', function(self)
   local OldRemoteInspectItemFromInvTile = self.RemoteInspectItemFromInvTile
   function self:RemoteInspectItemFromInvTile(item)
-    CraftFinder(item and item.prefab)
+    if not TUNING.WtCwT.key_handler then ShowRecipesByIngredient(item and item.prefab) end
     return OldRemoteInspectItemFromInvTile(self, item)
   end
 
   local OldRemoteInspectButton = self.RemoteInspectButton
   function self:RemoteInspectButton(action)
-    CraftFinder(action and action.target and action.target.prefab)
+    if not TUNING.WtCwT.key_handler then ShowRecipesByIngredient(action and action.target and action.target.prefab) end
     return OldRemoteInspectButton(self, action)
   end
 
   local OldRemoteUseItemFromInvTile = self.RemoteUseItemFromInvTile
   function self:RemoteUseItemFromInvTile(buffaction, item)
-    local prefab = item and item.prefab
-    if buffaction.action == GLOBAL.ACTIONS.LOOKAT then CraftFinder(prefab) end
-    return OldRemoteUseItemFromInvTile(self, buffaction, item)
-  end
-
-  if GetModConfigData('enable_inspect_on_ground') then
-    local OldDoAction = self.DoAction
-    function self:DoAction(buffaction, ...)
-      local prefab = buffaction and buffaction.target and buffaction.target.prefab
-      if buffaction.action == GLOBAL.ACTIONS.LOOKAT then CraftFinder(prefab) end
-      return OldDoAction(self, buffaction, ...)
+    if not TUNING.WtCwT.key_handler and buffaction.action == G.ACTIONS.LOOKAT then
+      ShowRecipesByIngredient(item and item.prefab)
     end
+    return OldRemoteUseItemFromInvTile(self, buffaction, item)
   end
 end)
 
-if GetModConfigData('prevent_tech_tree_refresh') then -- no more messing up current page!
-  AddClassPostConstruct('widgets/redux/craftingmenu_widget', function(self)
-    local OldRefresh = self.Refresh
-    function self:Refresh(...)
-      if override_filter then
-        self:UpdateFilterButtons() -- e.g. the crafting station button on the left side of search box
-        self.recipe_grid:RefreshView() -- update the recipe state visual hint, e.g. the lightbulb or lock icon
-        self.details_root:Refresh() -- update the detail below
-      else
-        return OldRefresh(self, ...)
-      end
+-- no more messing up current page!
+AddClassPostConstruct('widgets/redux/craftingmenu_widget', function(self)
+  local OldRefresh = self.Refresh
+  function self:Refresh(...)
+    if TUNING.WtCwT.override_filter then
+      self:UpdateFilterButtons() -- e.g. the crafting station button on the left side of search box
+      self.recipe_grid:RefreshView() -- update the recipe state visual hint, e.g. the lightbulb or lock icon
+      self.details_root:Refresh() -- update the detail below
+    else
+      return OldRefresh(self, ...)
     end
+  end
 
-    local OldSelectFilter = self.SelectFilter
-    function self:SelectFilter(...)
-      override_filter = false
-      return OldSelectFilter(self, ...)
-    end
-  end)
+  local OldSelectFilter = self.SelectFilter
+  function self:SelectFilter(...)
+    TUNING.WtCwT.override_filter = false
+    return OldSelectFilter(self, ...)
+  end
+end)
+
+modimport('keybind')
+local Input = G.TheInput
+local GetPrefabUnderMouse = require('get_prefab_under_mouse')
+
+function KeyBind(_, key)
+  -- disable old binding
+  if TUNING.WtCwT.key_handler then
+    TUNING.WtCwT.key_handler:Remove()
+    TUNING.WtCwT.key_handler = nil
+  end
+
+  -- new binding
+  local function f(_key, down) return (_key == key and down) and ShowRecipesByIngredient(GetPrefabUnderMouse()) end
+  TUNING.WtCwT.key_handler = key and (key >= 1000 and Input:AddMouseButtonHandler(f) or Input:AddKeyHandler(f))
 end
