@@ -21,8 +21,8 @@ description = T(
 api_version = 10
 dst_compatible = true
 client_only_mod = true
-icon_atlas = 'icon.xml'
-icon = 'icon.tex'
+icon = 'modicon.tex'
+icon_atlas = 'modicon.xml'
 
 local keyboard = { -- from STRINGS.UI.CONTROLSSCREEN.INPUTS[1] of strings.lua, need to match constants.lua too.
   { 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'Print', 'ScrolLock', 'Pause' },
