@@ -6,12 +6,14 @@ local date = '2026-06-17'
 version = date .. '' -- for revision in same day
 description = T(
   [[
+󰀏 Help you quickly find the right recipe! Craftable ones are sorted first!
 - Inspect inventory item, popup crafting menu and show all possible recipes.
 - Inspecting supports both Keyboard/Mouse and Gamepad.
 - If don't like inspecting, feel free to bind a key in-game to show recipes.
 - Key binding is in Settings->Controls page, scroll down to find it.
 ]],
   [[
+󰀏 助你快速找到想要制作的配方！能做的排前面！
 - 检查格子里的物品，弹出制作目录并展示所有可能的配方。
 - 检查支持键鼠以及手柄。
 - 如果不喜欢检查，也可以在游戏内绑定一个按键来展示配方。

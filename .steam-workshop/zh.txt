@@ -1,0 +1,18 @@
+[h3]助你快速找到想要制作的配方！能做的排前面！[/h3]
+
+[list]
+[*]检查格子里的物品，弹出制作目录并展示所有可能的配方。
+[*]检查支持键鼠以及手柄。
+[*]如果不喜欢检查，也可以在游戏内绑定一个按键来展示配方。
+[*]按键绑定在设置->控制页面，往下翻就能找到。
+[/list]
+
+[h1]推荐[/h1]
+[list]
+[*]Z 的自动关闭制作菜单 [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3717392569]Crafting Auto-Close[/url]
+[/list]
+
+超级感谢 Sinny Deas 的原模组 Inspect Craft Finder！
+
+[hr][/hr]
+[url=https://github.com/liolok/InspectCraftFinder]源码[/url]

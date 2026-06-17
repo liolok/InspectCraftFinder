@@ -1,0 +1,18 @@
+[h3]Help you quickly find the right recipe! Craftable ones are sorted first![/h3]
+
+[list]
+[*]Inspect inventory item, popup crafting menu and show all possible recipes.
+[*]Inspecting supports both Keyboard/Mouse and Gamepad.
+[*]If don't like inspecting, feel free to bind a key in-game to show recipes.
+[*]Key binding is in Settings->Controls page, scroll down to find it.
+[/list]
+
+[h1]Recommendations[/h1]
+[list]
+[*]Z's [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3717392569]Crafting Auto-Close[/url]
+[/list]
+
+Huge thanks to Sinny Deas for original mod Inspect Craft Finder!
+
+[hr][/hr]
+[url=https://github.com/liolok/InspectCraftFinder]Source Code[/url]
