@@ -2,7 +2,7 @@ local function T(en, zh, zht) return ChooseTranslationTable({ en, zh = zh, zht =
 
 name = T('What to Craft with This?', '这个能造啥？')
 author = T('Sinny Deas, liolok', 'Sinny Deas、李皓奇')
-local date = '2026-06-17'
+local date = '2026-06-19'
 version = date .. '' -- for revision in same day
 description = T(
   [[
