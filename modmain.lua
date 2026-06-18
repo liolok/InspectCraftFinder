@@ -18,29 +18,51 @@ AddPlayerPostInit(function()
   end
 end)
 
+local function HookInspect(item)
+  local prefab = item and item.prefab
+  if type(prefab) ~= 'string' then return end -- invalid prefab
+  if TUNING.WtCwT.key_handler then return end -- key binding already exists, don't hook Inspect actions.
+  if not TUNING.WtCwT.recipes[prefab] then return end -- no recipes found
+  return ShowRecipesByIngredient(prefab)
+end
+
+-- Regular world
 AddComponentPostInit('playercontroller', function(self)
+  -- Should be using controller to Inspect? untested anyway
   local OldRemoteInspectItemFromInvTile = self.RemoteInspectItemFromInvTile
   function self:RemoteInspectItemFromInvTile(item)
-    if not TUNING.WtCwT.key_handler then ShowRecipesByIngredient(item and item.prefab) end
+    HookInspect(item)
     return OldRemoteInspectItemFromInvTile(self, item)
   end
 
-  local OldRemoteInspectButton = self.RemoteInspectButton
-  function self:RemoteInspectButton(action)
-    if not TUNING.WtCwT.key_handler then ShowRecipesByIngredient(action and action.target and action.target.prefab) end
-    return OldRemoteInspectButton(self, action)
-  end
-
+  -- RMB to Inspect or Alt + LMB to Examine
   local OldRemoteUseItemFromInvTile = self.RemoteUseItemFromInvTile
   function self:RemoteUseItemFromInvTile(buffaction, item)
-    if not TUNING.WtCwT.key_handler and buffaction.action == G.ACTIONS.LOOKAT then
-      ShowRecipesByIngredient(item and item.prefab)
-    end
+    if buffaction.action == G.ACTIONS.LOOKAT then HookInspect(item) end
     return OldRemoteUseItemFromInvTile(self, buffaction, item)
   end
 end)
 
--- no more messing up current page!
+-- Local forest-only world or Dont Starve Alone world
+AddComponentPostInit('inventory', function(self)
+  -- RMB on inventory item to "Inspect"
+  local OldUseItemFromInvTile = self.UseItemFromInvTile
+  function self:UseItemFromInvTile(item, ...)
+    local actions = self.inst.components.playeractionpicker:GetInventoryActions(item)
+    local act = actions[1]
+    if act.action == G.ACTIONS.LOOKAT then HookInspect(item) end
+    return OldUseItemFromInvTile(self, item, ...)
+  end
+
+  -- Alt + LMB on inventory item to "Examine"
+  local OldInspectItemFromInvTile = self.InspectItemFromInvTile
+  function self:InspectItemFromInvTile(item)
+    HookInspect(item)
+    return OldInspectItemFromInvTile(self, item)
+  end
+end)
+
+-- No more messing up current page!
 AddClassPostConstruct('widgets/redux/craftingmenu_widget', function(self)
   local OldRefresh = self.Refresh
   function self:Refresh(...)
