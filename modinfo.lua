@@ -67,4 +67,13 @@ configuration_options = {
     options = keys,
     default = 'KEY_DISABLED',
   },
+  {
+    name = 'hook_item_on_ground',
+    label = T('Item on Ground', '地面物品'),
+    options = {
+      { description = T('Ignore', '忽略'), data = false },
+      { description = T('Detect', '检测'), data = true },
+    },
+    default = true,
+  },
 }

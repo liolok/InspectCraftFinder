@@ -41,6 +41,14 @@ AddComponentPostInit('playercontroller', function(self)
     if buffaction.action == G.ACTIONS.LOOKAT then HookInspect(item) end
     return OldRemoteUseItemFromInvTile(self, buffaction, item)
   end
+
+  if GetModConfigData('hook_item_on_ground') then
+    local OldDoAction = self.DoAction
+    function self:DoAction(buffaction, ...)
+      if buffaction.action == G.ACTIONS.LOOKAT then HookInspect(buffaction.target) end
+      return OldDoAction(self, buffaction, ...)
+    end
+  end
 end)
 
 -- Local forest-only world or Dont Starve Alone world
